@@ -21,6 +21,7 @@ async function chat(
   isSpeakerEnabled,
   translationLanguage
 ) {
+  console.log("[DEBUG] chat() started with:", { userMsg, isSpeakerEnabled, translationLanguage });
   let textResponse;
   let attributions = [];
   let qnaHistory = "";
@@ -32,8 +33,10 @@ async function chat(
     const { userMessage: originalQuery, conversationId: convId } =
       JSON.parse(userMsg);
     conversationId = convId;
+    console.log("[DEBUG] Parsed user message:", { originalQuery, conversationId });
 
     const query = await translateText(originalQuery, translationLanguage, "en");
+    console.log("[DEBUG] Translated query:", { originalQuery, translatedQuery: query });
 
     if (conversationId) {
       const conversationHistory = await queryConversastion(conversationId);
@@ -43,6 +46,7 @@ async function chat(
             (item) => `Query: ${item.question} \nResponse: ${item.response}`
           )
           .join("\n") || "";
+      console.log("[DEBUG] Conversation history loaded:", { historyLength: conversationHistory?.length });
     }
 
     const handleGreetingsPrompt = llmPrompt(
@@ -55,8 +59,10 @@ async function chat(
       "",
       isSpeakerEnabled
     );
+    console.log("[DEBUG] First LLM prompt created for greeting detection");
     const respLLM = await executeBedrockAPI(handleGreetingsPrompt);
     const firstLLMResponse = extractFirstJSON(respLLM);
+    console.log("[DEBUG] First LLM response:", firstLLMResponse);
 
     if (firstLLMResponse?.context == "greeting") {
       textResponse = firstLLMResponse.response;
@@ -84,9 +90,11 @@ async function chat(
       //   decodedToken.applicationIdQ
       // );
 
+      console.log("[DEBUG] Calling knowledge base retrieval with query:", nextQuery ? nextQuery : query);
       const kendraRetrieveResponse = await retrieveFromKnowledgeBase(
         nextQuery ? nextQuery : query
       );
+      console.log("[DEBUG] Knowledge base response received:", { hasResponse: !!kendraRetrieveResponse });
 
       if (!kendraRetrieveResponse) {
         var outputResponse = {
@@ -178,7 +186,7 @@ async function chat(
 
     return;
   } catch (error) {
-    console.log(error);
+    console.log("[DEBUG] Error in chat function:", error);
     var outputResponse = {
       conversationId: conversationId,
       failedAttachments: [],
