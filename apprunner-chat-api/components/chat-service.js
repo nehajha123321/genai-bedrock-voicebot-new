@@ -2,7 +2,9 @@ const {
   executeBedrockAPI,
   executeBedrockStreamingAPI,
 } = require("./llm-service/bedrock-services");
-const { retrieveKendraSearch } = require("./rag-service/kendra-retrieval");
+// const { retrieveKendraSearch } = require("./rag-service/kendra-retrieval");
+const { retrieveFromKnowledgeBase } = require("./rag-service/knowledge-base-retriever");
+
 const {
   mutateConversation,
   queryConversastion,
@@ -77,9 +79,13 @@ async function chat(
       firstLLMResponse?.context == "new-query" ||
       firstLLMResponse?.context == "follow-up"
     ) {
-      const kendraRetrieveResponse = await retrieveKendraSearch(
-        nextQuery ? nextQuery : query,
-        decodedToken.applicationIdQ
+      // const kendraRetrieveResponse = await retrieveKendraSearch(
+      //   nextQuery ? nextQuery : query,
+      //   decodedToken.applicationIdQ
+      // );
+
+      const kendraRetrieveResponse = await retrieveFromKnowledgeBase(
+        nextQuery ? nextQuery : query
       );
 
       if (!kendraRetrieveResponse) {
